@@ -68,15 +68,14 @@
     remote_src: true
   when: need_downgrade | bool
 
-- name: Remove current OpenSSL and related packages if downgrade needed
+- name: Downgrade openssl to target version if needed
   ansible.builtin.dnf:
     name: 
-      - openssl
-      - openssl-libs
-    state: absent
-  allow_downgrade: true
+      - "openssl-{{ target_openssl_version }}"
+      - "openssl-libs-{{ target_openssl_version }}"
+    state: present
+    allow_downgrade: true
   when: need_downgrade | bool
-  ignore_errors: true
 
 - name: Install specific OpenSSL version with libs
   ansible.builtin.dnf:
