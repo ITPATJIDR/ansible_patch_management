@@ -1,5 +1,14 @@
 ---
-- name: Update openssl to latest version
+- name: Ensure openssl is updated to latest
   ansible.builtin.yum:
     name: openssl
     state: latest
+
+- name: Verify installed openssl version
+  ansible.builtin.command: openssl version
+  register: openssl_version_output
+  changed_when: false
+
+- name: Print installed openssl version
+  ansible.builtin.debug:
+    msg: "{{ openssl_version_output.stdout }}"
