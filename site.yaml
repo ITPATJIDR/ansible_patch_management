@@ -5,3 +5,4 @@
 
   roles:
     - install_openssl_old_version
+    - patch_openssl

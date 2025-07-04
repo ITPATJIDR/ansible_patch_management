@@ -1,0 +1,5 @@
+- name: Update openssl to latest version
+  ansible.builtin.yum:
+    name: openssl
+    state: latest
+  become: true
