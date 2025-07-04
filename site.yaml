@@ -1,6 +1,6 @@
 ---
 - name: Test Patching from Red Hat Satellite
-  hosts: all
+  hosts: controller1
   become: yes
 
   roles:
