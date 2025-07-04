@@ -1,0 +1,26 @@
+---
+- name: Check if openssl is installed
+  ansible.builtin.package_facts:
+  register: openssl_installed
+
+- name: Install specific version of openssl if not installed
+  ansible.builtin.yum:
+    name: "openssl-{{ install_openssl_old_version_openssl_version }}"
+    state: present
+  when: "'openssl' not in ansible_facts.packages"
+
+- name: Downgrade to specific openssl version if installed but different version
+  ansible.builtin.yum:
+    name: "openssl-{{ install_openssl_old_version_openssl_version }}"
+    state: present
+    allow_downgrade: true
+  when: "'openssl' in ansible_facts.packages and ansible_facts.packages['openssl'][0].version != install_openssl_old_version_openssl_version"
+
+- name: Verify installed openssl version
+  ansible.builtin.command: openssl version
+  register: openssl_version_output
+  changed_when: false
+
+- name: Print installed openssl version
+  ansible.builtin.debug:
+    msg: "{{ openssl_version_output.stdout }}"
