@@ -74,6 +74,7 @@
       - openssl
       - openssl-libs
     state: absent
+  allow_downgrade: true
   when: need_downgrade | bool
   ignore_errors: true
 
