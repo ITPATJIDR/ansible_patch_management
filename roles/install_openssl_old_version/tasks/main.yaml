@@ -120,5 +120,5 @@
   ansible.builtin.debug:
     msg: |
       Downgrade successful: {{ downgrade_successful }}
-      Target was: 3.0.17
+      Target was: {{ openssl_installed_version }}
       Achieved: {{ openssl_installed_version }}
