@@ -1,35 +1,68 @@
 ---
-  - name: Gather installed package facts
-    ansible.builtin.package_facts:
+- name: Gather installed package facts
+  ansible.builtin.package_facts:
 
-  - name: Install specific version of openssl if not installed
-    ansible.builtin.yum:
-      name: "openssl-{{ install_openssl_old_version_openssl_version }}"
-      state: present
-    when: "'openssl' not in ansible_facts.packages"
+- name: Debug current OpenSSL package info
+  ansible.builtin.debug:
+    msg: "Current OpenSSL packages: {{ ansible_facts.packages.get('openssl', 'Not installed') }}"
 
-  - name: Downgrade to specific openssl version if installed but different version
-    ansible.builtin.yum:
-      name: "openssl-{{ install_openssl_old_version_openssl_version }}"
-      state: present
-      allow_downgrade: true
-    when: >
-      'openssl' in ansible_facts.packages and
-      (ansible_facts.packages['openssl'][0].version ~ install_openssl_old_version_openssl_version) == false
+- name: Check current OpenSSL version
+  ansible.builtin.command: openssl version
+  register: current_openssl_version
+  changed_when: false
+  failed_when: false
 
-  - name: Verify installed openssl version
-    ansible.builtin.command: openssl version
-    register: openssl_version_output
-    changed_when: false
+- name: Print current OpenSSL version
+  ansible.builtin.debug:
+    msg: "Current OpenSSL version: {{ current_openssl_version.stdout | default('Not found') }}"
 
-  - name: Print installed openssl full version output
-    ansible.builtin.debug:
-      msg: "Full output: {{ openssl_version_output.stdout }}"
+- name: Install specific version of openssl if not installed
+  ansible.builtin.dnf:
+    name: "openssl-{{ install_openssl_old_version_openssl_version }}"
+    state: present
+  when: "'openssl' not in ansible_facts.packages"
 
-  - name: Extract and print only version number
-    ansible.builtin.set_fact:
-      openssl_installed_version: "{{ openssl_version_output.stdout.split(' ')[1] }}"
+- name: Check if downgrade is needed
+  ansible.builtin.set_fact:
+    need_downgrade: >-
+      {{
+        'openssl' in ansible_facts.packages and
+        ansible_facts.packages['openssl'][0].version != install_openssl_old_version_openssl_version
+      }}
 
-  - name: Print extracted openssl version
-    ansible.builtin.debug:
-      msg: "Installed OpenSSL version: {{ openssl_installed_version }}"
+- name: Print downgrade decision
+  ansible.builtin.debug:
+    msg: |
+      Need downgrade: {{ need_downgrade }}
+      Current version: {{ ansible_facts.packages.get('openssl', [{'version': 'N/A'}])[0].version }}
+      Target version: {{ install_openssl_old_version_openssl_version }}
+
+- name: Remove current OpenSSL if downgrade needed
+  ansible.builtin.dnf:
+    name: openssl
+    state: absent
+  when: need_downgrade | bool
+
+- name: Install specific OpenSSL version after removal
+  ansible.builtin.dnf:
+    name: "openssl-{{ install_openssl_old_version_openssl_version }}"
+    state: present
+    allow_downgrade: true
+  when: need_downgrade | bool
+
+- name: Verify final installed openssl version
+  ansible.builtin.command: openssl version
+  register: final_openssl_version
+  changed_when: false
+
+- name: Print final openssl version output
+  ansible.builtin.debug:
+    msg: "Final OpenSSL version: {{ final_openssl_version.stdout }}"
+
+- name: Extract and store version number
+  ansible.builtin.set_fact:
+    openssl_installed_version: "{{ final_openssl_version.stdout.split(' ')[1] }}"
+
+- name: Print extracted version
+  ansible.builtin.debug:
+    msg: "Extracted version: {{ openssl_installed_version }}"
