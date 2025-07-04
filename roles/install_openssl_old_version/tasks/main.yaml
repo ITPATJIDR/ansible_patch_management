@@ -95,14 +95,6 @@
   when: need_downgrade | bool
   ignore_errors: true
 
-- name: Restore OpenSSL configuration if backup exists
-  ansible.builtin.copy:
-    src: /etc/ssl.backup/
-    dest: /etc/ssl/
-    remote_src: true
-  when: need_downgrade | bool and ansible_facts.path.exists('/etc/ssl.backup')
-  ignore_errors: true
-
 - name: Verify final installed openssl version
   ansible.builtin.command: openssl version
   register: final_openssl_version
@@ -130,9 +122,3 @@
       Downgrade successful: {{ downgrade_successful }}
       Target was: 3.0.17
       Achieved: {{ openssl_installed_version }}
-
-- name: Cleanup backup if successful
-  ansible.builtin.file:
-    path: /etc/ssl.backup
-    state: absent
-  when: downgrade_successful | bool
