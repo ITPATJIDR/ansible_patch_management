@@ -1,3 +1,6 @@
 ---
-install_openssl_old_version_openssl_version: "1.1.1k-7.el8_6"  # For CentOS 8
-install_openssl_old_version_openssl_version: "1.1.1k-12.el9_2"  # For CentOS 9
+target_openssl_version: "3.0.17-1.el10"  
+target_openssl_version: "3.0.17-1.el10_0"  
+target_openssl_version: "3.0.17"  
+create_backup: true
+cleanup_after_success: true

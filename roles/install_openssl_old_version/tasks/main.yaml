@@ -16,9 +16,33 @@
   ansible.builtin.debug:
     msg: "Current OpenSSL version: {{ current_openssl_version.stdout | default('Not found') }}"
 
+- name: Check available OpenSSL versions
+  ansible.builtin.command: dnf list --showduplicates openssl
+  register: available_openssl_versions
+  changed_when: false
+  failed_when: false
+
+- name: Print available OpenSSL versions
+  ansible.builtin.debug:
+    msg: "Available OpenSSL versions: {{ available_openssl_versions.stdout_lines }}"
+
+- name: Extract current version from package facts
+  ansible.builtin.set_fact:
+    current_package_version: "{{ ansible_facts.packages.get('openssl', [{'version': 'N/A'}])[0].version }}"
+
+- name: Check if target version is available
+  ansible.builtin.shell: |
+    dnf list --showduplicates openssl | grep -i "{{ target_openssl_version }}" || echo "not_found"
+  register: version_check
+  changed_when: false
+
+- name: Print version availability check
+  ansible.builtin.debug:
+    msg: "Target version {{ target_openssl_version }} availability: {{ version_check.stdout }}"
+
 - name: Install specific version of openssl if not installed
   ansible.builtin.dnf:
-    name: "openssl-{{ install_openssl_old_version_openssl_version }}"
+    name: "openssl-{{ target_openssl_version }}"
     state: present
   when: "'openssl' not in ansible_facts.packages"
 
@@ -27,28 +51,57 @@
     need_downgrade: >-
       {{
         'openssl' in ansible_facts.packages and
-        ansible_facts.packages['openssl'][0].version != install_openssl_old_version_openssl_version
+        not (current_package_version is search(target_openssl_version.split('-')[0]))
       }}
 
 - name: Print downgrade decision
   ansible.builtin.debug:
     msg: |
       Need downgrade: {{ need_downgrade }}
-      Current version: {{ ansible_facts.packages.get('openssl', [{'version': 'N/A'}])[0].version }}
-      Target version: {{ install_openssl_old_version_openssl_version }}
+      Current package version: {{ current_package_version }}
+      Target version: {{ target_openssl_version }}
 
-- name: Remove current OpenSSL if downgrade needed
-  ansible.builtin.dnf:
-    name: openssl
-    state: absent
+- name: Create backup of current OpenSSL configuration
+  ansible.builtin.copy:
+    src: /etc/ssl/
+    dest: /etc/ssl.backup/
+    remote_src: true
   when: need_downgrade | bool
 
-- name: Install specific OpenSSL version after removal
+- name: Remove current OpenSSL and related packages if downgrade needed
   ansible.builtin.dnf:
-    name: "openssl-{{ install_openssl_old_version_openssl_version }}"
+    name: 
+      - openssl
+      - openssl-libs
+    state: absent
+  when: need_downgrade | bool
+  ignore_errors: true
+
+- name: Install specific OpenSSL version with libs
+  ansible.builtin.dnf:
+    name: 
+      - "openssl-{{ target_openssl_version }}"
+      - "openssl-libs-{{ target_openssl_version }}"
     state: present
     allow_downgrade: true
   when: need_downgrade | bool
+  ignore_errors: true
+
+- name: Alternative: Try installing without libs if above fails
+  ansible.builtin.dnf:
+    name: "openssl-{{ target_openssl_version }}"
+    state: present
+    allow_downgrade: true
+  when: need_downgrade | bool
+  ignore_errors: true
+
+- name: Restore OpenSSL configuration if backup exists
+  ansible.builtin.copy:
+    src: /etc/ssl.backup/
+    dest: /etc/ssl/
+    remote_src: true
+  when: need_downgrade | bool and ansible_facts.path.exists('/etc/ssl.backup')
+  ignore_errors: true
 
 - name: Verify final installed openssl version
   ansible.builtin.command: openssl version
@@ -66,3 +119,20 @@
 - name: Print extracted version
   ansible.builtin.debug:
     msg: "Extracted version: {{ openssl_installed_version }}"
+
+- name: Verify if target version was achieved
+  ansible.builtin.set_fact:
+    downgrade_successful: "{{ openssl_installed_version is search('3.0.17') }}"
+
+- name: Print final status
+  ansible.builtin.debug:
+    msg: |
+      Downgrade successful: {{ downgrade_successful }}
+      Target was: 3.0.17
+      Achieved: {{ openssl_installed_version }}
+
+- name: Cleanup backup if successful
+  ansible.builtin.file:
+    path: /etc/ssl.backup
+    state: absent
+  when: downgrade_successful | bool
