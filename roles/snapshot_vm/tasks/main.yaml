@@ -1,0 +1,14 @@
+---
+- name: Generate snapshot filename
+  ansible.builtin.shell: "echo /tmp/snapshot_$(date +%Y%m%d%H%M%S)"
+  register: snapshot_filename
+  changed_when: false
+
+- name: Snapshot VM
+  ansible.builtin.file:
+    path: "{{ snapshot_filename.stdout }}"
+    state: touch
+
+- name: Print snapshot filename
+  ansible.builtin.debug:
+    msg: "Snapshot created: {{ snapshot_filename.stdout }}"
