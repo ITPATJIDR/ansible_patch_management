@@ -1,6 +1,5 @@
 ---
-target_openssl_version: "3.0.17-1.el10"  
-target_openssl_version: "3.0.17-1.el10_0"  
-target_openssl_version: "3.0.17"  
+target_openssl_version: "3.5.0-2.el10"  
 create_backup: true
 cleanup_after_success: true
+
