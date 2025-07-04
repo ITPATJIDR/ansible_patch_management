@@ -114,7 +114,7 @@
 
 - name: Verify if target version was achieved
   ansible.builtin.set_fact:
-    downgrade_successful: "{{ openssl_installed_version is search('3.0.17') }}"
+    downgrade_successful: "{{ openssl_installed_version is search(target_openssl_version.split('-')[0]) }}"
 
 - name: Print final status
   ansible.builtin.debug:
