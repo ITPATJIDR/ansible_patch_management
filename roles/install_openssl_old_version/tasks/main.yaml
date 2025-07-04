@@ -87,7 +87,7 @@
   when: need_downgrade | bool
   ignore_errors: true
 
-- name: Alternative: Try installing without libs if above fails
+- name: Alternative Try installing without libs if above fails
   ansible.builtin.dnf:
     name: "openssl-{{ target_openssl_version }}"
     state: present
