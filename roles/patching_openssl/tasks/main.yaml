@@ -1,8 +1,8 @@
 ---
-- name: Ensure openssl is updated to latest
-  ansible.builtin.yum:
+- name: Ensure openssl is installed 
+  ansible.builtin.dnf:
     name: openssl
-    state: latest
+    state: present
 
 - name: Verify installed openssl version
   ansible.builtin.command: openssl version

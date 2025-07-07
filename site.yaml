@@ -1,7 +1,7 @@
 ---
 - name: Test Patching from Red Hat Satellite
   hosts: controller1
-  become: yes
+  become: true
 
   roles:
     - snapshot_vm

@@ -1,14 +1,17 @@
 ---
 - name: Generate snapshot filename
-  ansible.builtin.shell: "echo /tmp/snapshot_$(date +%Y%m%d%H%M%S)"
-  register: snapshot_filename
-  changed_when: false
+  ansible.builtin.set_fact:
+    snapshot_filename: "/tmp/snapshot_{{ ansible_date_time.iso8601_basic_short }}"
 
-- name: Snapshot VM
+- name: Snapshot VM (create empty snapshot file with secure permissions)
   ansible.builtin.file:
-    path: "{{ snapshot_filename.stdout }}"
+    path: "{{ snapshot_filename }}"
     state: touch
+    mode: '0600'
+    owner: root
+    group: root
 
 - name: Print snapshot filename
   ansible.builtin.debug:
-    msg: "Snapshot created: {{ snapshot_filename.stdout }}"
+    msg: "Snapshot created: {{ snapshot_filename }}"
+
