@@ -16,6 +16,11 @@
   ansible.builtin.debug:
     msg: "Current OpenSSL version: {{ current_openssl_version.stdout | default('Not found') }}"
 
+- name: Check available OpenSSL versions
+  ansible.builtin.command: dnf list --showduplicates openssl
+  register: available_openssl_versions
+  changed_when: false
+  failed_when: false
 
 - name: Check if target version is available in available_openssl_versions
   ansible.builtin.set_fact:
