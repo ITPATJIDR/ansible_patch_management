@@ -1,5 +1,5 @@
 ---
-install_openssl_old_version_target_version: "1.1.1k-1.el8"
+install_openssl_old_version_target_version: "3.2.2-16.el10"
 install_openssl_old_version_create_backup: true
 install_openssl_old_version_cleanup_after_success: true
 
