@@ -22,6 +22,10 @@
   changed_when: false
   failed_when: false
 
+- name: Print available OpenSSL versions
+  ansible.builtin.debug:
+    msg: "Available OpenSSL versions: {{ available_openssl_versions.stdout_lines }}"
+
 - name: Check if target version is available in available_openssl_versions
   ansible.builtin.set_fact:
     install_openssl_old_version_target_version_available: >-
@@ -29,25 +33,14 @@
         install_openssl_old_version_target_version in (available_openssl_versions.stdout | default(''))
       }}
 
-- name: Print available OpenSSL versions
-  ansible.builtin.debug:
-    msg: "Available OpenSSL versions: {{ available_openssl_versions.stdout_lines }}"
+- name: Fail if target version is not available
+  ansible.builtin.fail:
+    msg: "Target OpenSSL version {{ install_openssl_old_version_target_version }} is not available in the repository."
+  when: not install_openssl_old_version_target_version_available
 
 - name: Extract current version from package facts
   ansible.builtin.set_fact:
     install_openssl_old_version_current_package_version: "{{ ansible_facts.packages.get('openssl', [{'version': 'N/A'}])[0].version }}"
-
-- name: Check if target version is available
-  ansible.builtin.shell: |
-    set -o pipefail
-    dnf list --showduplicates openssl | grep -i "{{ install_openssl_old_version_target_version }}"
-  register: version_check
-  changed_when: false
-  failed_when: version_check.rc != 0
-
-- name: Print version availability check
-  ansible.builtin.debug:
-    msg: "Target version {{ install_openssl_old_version_target_version }} availability: {{ version_check.stdout }}"
 
 - name: Install specific version of openssl if not installed
   ansible.builtin.dnf:
