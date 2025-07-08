@@ -5,5 +5,5 @@
 
   roles:
     - snapshot_vm
-    - install_openssl_old_version
-    - patching_openssl
+    - check_cve
+    - patching
