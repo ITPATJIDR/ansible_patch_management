@@ -2,7 +2,7 @@
 - name: Ensure openssl is installed 
   ansible.builtin.dnf:
     name: openssl
-    state: present
+    state: latest
 
 - name: Verify installed openssl version
   ansible.builtin.command: openssl version
