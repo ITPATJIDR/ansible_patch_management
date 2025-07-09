@@ -4,5 +4,4 @@
   become: true
 
   roles:
-    - install_openssl_old_version
     - patching_openssl
